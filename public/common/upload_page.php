@@ -30,6 +30,10 @@ page_header($headings[$scenario]);
 <?php endforeach; ?>
 </tbody></table>
 <?php if ($scenario === 'idor'): ?>
-<p class="note">This list displays only your own files, but the download handler intentionally omits the ownership check. Record Alice's file ID before signing in as Bob.</p>
+<p class="note">
+    This list displays only your own files, but the download handler
+    intentionally omits the ownership check. Record Igor's file ID,
+    then sign in as Arcie to test unauthorized access.
+</p>
 <?php endif; ?>
 <?php page_footer(); ?>

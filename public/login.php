@@ -19,5 +19,11 @@ if ($error) echo '<p class="error">' . e($error) . '</p>';
 <form method="post"><label>Username <input name="username" required autocomplete="username"></label>
 <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
 <button type="submit">Sign in</button></form>
-<p>Demo accounts: <code>alice / alice123</code>, <code>bob / bob123</code>. Do not reuse these passwords.</p>
+<p>
+    Demo accounts:
+    <code>arcie</code>,
+    <code>crosley</code>,
+    <code>igor</code>
+    (Password: <code>password123</code>)
+</p>
 <?php page_footer(); ?>

@@ -9,5 +9,4 @@ page_header('Laboratory dashboard');
 <a class="card" href="/scenarios/xss/"><strong>2. Uploaded-content XSS</strong><span>Active documents rendered within the application origin</span></a>
 <a class="card" href="/scenarios/idor/"><strong>3. Unauthorized file access</strong><span>Private files retrieved using a file ID</span></a>
 </div>
-<h2>Research boundary</h2><p>Do not consider acceptance or ordinary retrieval to be evidence of a vulnerability. Member B must demonstrate unauthorized server execution, browser script execution, or cross-user data disclosure.</p>
 <?php page_footer(); ?>

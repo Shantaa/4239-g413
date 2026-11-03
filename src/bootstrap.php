@@ -58,7 +58,6 @@ function page_header(string $title): void {
     echo '<title>' . e($title) . ' | CS4239 Lab</title><link rel="stylesheet" href="/assets/lab.css"></head><body><div class="wrap">';
     echo '<header><strong>CS4239 File Lifecycle Lab</strong><nav><a href="/">Home</a> · <span>' . $name . '</span> · ';
     echo ($user ? '<a href="/logout.php">Log out</a>' : '<a href="/login.php">Log in</a>') . '</nav></header>';
-    echo '<p class="warning">Deliberately vulnerable coursework lab. Use localhost only. Never upload real secrets.</p>';
     echo '<main><h1>' . e($title) . '</h1>';
 }
 function page_footer(): void { echo '</main><footer>Local teaching environment · Unhardened baseline</footer></div></body></html>'; }

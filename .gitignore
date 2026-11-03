@@ -1,18 +1,17 @@
-# Database and uploaded files
+# Runtime database, stored documents and session-related files
 /data/*
 !/data/.gitkeep
 
-# RCE experiment uploads
+# Generated uploads — keep directories, not submitted files
 /public/scenarios/rce/uploads/*
 !/public/scenarios/rce/uploads/.gitkeep
-
-# XSS experiment uploads
 /public/scenarios/xss/uploads/*
 !/public/scenarios/xss/uploads/.gitkeep
+/public/scenarios/*/v*/uploads/*
+!/public/scenarios/*/v*/uploads/.gitkeep
 
-# Logs
+# Local-only evidence, temporary or private test outputs
+/exploits/results/private/
 *.log
-
-# Temporary files
 *.tmp
 .DS_Store

@@ -1,13 +1,12 @@
 <?php
-// All code in this project is intended for an ISOLATED, localhost-only security lab.
+// Intentionally vulnerable coursework examples: run ONLY on a loopback-only disposable VM.
 declare(strict_types=1);
 const LAB_ROOT = __DIR__ . '/..';
 const PUBLIC_ROOT = LAB_ROOT . '/public';
 const DATA_ROOT = LAB_ROOT . '/data';
 const DATABASE_FILE = DATA_ROOT . '/lab.sqlite';
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+
 function db(): PDO {
     static $pdo = null;
     if ($pdo === null) {
@@ -30,26 +29,35 @@ function current_user(): ?array {
 }
 function require_user(): array {
     $user = current_user();
-    if ($user === null) {
-        header('Location: /login.php');
-        exit;
-    }
+    if ($user === null) { header('Location: /login.php'); exit; }
     return $user;
 }
 function get_file(int $id): ?array {
     $st = db()->prepare('SELECT * FROM files WHERE id = ?');
     $st->execute([$id]);
-    $f = $st->fetch();
-    return $f ?: null;
+    $row = $st->fetch();
+    return $row ?: null;
 }
-function find_my_files(int $owner, string $scenario): array {
-    $st = db()->prepare('SELECT * FROM files WHERE owner_id = ? AND scenario = ? ORDER BY id DESC');
-    $st->execute([$owner, $scenario]);
+function find_my_files(int $owner, string $scenario, string $variant): array {
+    $st = db()->prepare('SELECT * FROM files WHERE owner_id = ? AND scenario = ? AND variant = ? ORDER BY id DESC');
+    $st->execute([$owner, $scenario, $variant]);
     return $st->fetchAll();
 }
-function file_link(array $f): string {
-    if ($f['scenario'] === 'idor') return '/scenarios/idor/download.php?id=' . $f['id'];
-    return '/scenarios/' . $f['scenario'] . '/uploads/' . rawurlencode($f['stored_name']);
+function scenario_url(string $scenario, string $variant = ''): string {
+    if (!in_array($scenario, ['rce', 'xss', 'idor'], true)) throw new InvalidArgumentException('Unknown scenario');
+    if ($variant !== '' && !preg_match('/^v[1-9][0-9]*$/', $variant)) throw new InvalidArgumentException('Invalid version');
+    return '/scenarios/' . $scenario . '/' . ($variant !== '' ? $variant . '/' : '');
+}
+function file_link(array $file): string {
+    $scenario = (string)$file['scenario'];
+    $variant = (string)($file['variant'] ?? 'v1');
+    if ($scenario === 'idor') return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
+    if (!in_array($scenario, ['rce', 'xss'], true)) throw new InvalidArgumentException('Unknown file scenario');
+    // Original pre-versioning uploads remain accessible without losing previously stored files.
+    $legacyDir = PUBLIC_ROOT . '/scenarios/' . $scenario . '/uploads/';
+    $legacy = str_starts_with((string)$file['disk_path'], $legacyDir);
+    $base = $legacy ? scenario_url($scenario) : scenario_url($scenario, $variant);
+    return $base . 'uploads/' . rawurlencode((string)$file['stored_name']);
 }
 function page_header(string $title): void {
     $user = current_user();
@@ -60,4 +68,4 @@ function page_header(string $title): void {
     echo ($user ? '<a href="/logout.php">Log out</a>' : '<a href="/login.php">Log in</a>') . '</nav></header>';
     echo '<main><h1>' . e($title) . '</h1>';
 }
-function page_footer(): void { echo '</main><footer>Local teaching environment · Unhardened baseline</footer></div></body></html>'; }
+function page_footer(): void { echo '</main><footer>CS4239 Coursework · Experimental web application</footer></div></body></html>'; }

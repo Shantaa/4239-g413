@@ -1,3 +1,3 @@
 <?php
 $scenario = 'rce';
-require __DIR__ . '/../../common/upload_page.php';
+require __DIR__ . '/../../common/scenario_overview.php';

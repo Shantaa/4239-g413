@@ -1,99 +1,52 @@
-# CS4239 Assignment 2: Member A Starter Application
+# CS4239 Assignment 2 — File Upload Lifecycle Security Lab
 
-**For coursework only. Intentionally insecure. Operate inside a disposable Ubuntu VM; do not expose the server on external interfaces or use real data.**
+**Local, disposable VM only.** Deliberately vulnerable baseline; never expose the web app to a network or use real credentials/data.
 
-This is the **unhardened application**, not the finished defence comparison. It implements a single PHP/Apache application with three controlled vulnerable scenarios for Member B to test. Member C will implement and evaluate defences later.
+## Overview
 
-## Components
+A shared PHP/Apache/SQLite file-management application for controlled security experiments:
 
-- User logins: `alice / alice123`, `bob / bob123` (local test accounts only)
-- `/scenarios/rce/` — upload to a PHP-enabled directory in the Apache document root; no file-type validation
-- `/scenarios/xss/` — upload SVG/HTML and preview from the same origin without sandboxing
-- `/scenarios/idor/` — private file uploads stored outside the webroot, but `download.php?id=N` omits an owner check
-- A single SQLite file holds file metadata and accounts
-- Upload files are stored on the **Ubuntu VM itself**. No separate storage server or database daemon.
+| Investigation | Landing page | Active baseline | Planned defences |
+| --- | --- | --- | --- |
+| RCE | `/scenarios/rce/` | `/scenarios/rce/v1/` | `/v2/`, `/v3/` |
+| Stored XSS | `/scenarios/xss/` | `/scenarios/xss/v1/` | `/v2/`, `/v3/` |
+| IDOR | `/scenarios/idor/` | `/scenarios/idor/v1/` | `/v2/`, `/v3/` |
+| Integrated | — | — | `/scenarios/patched/` placeholder |
 
-## 0. Preflight
+The investigation V2/V3 and integrated patched pages are intentionally **not implemented**. These URLs display placeholders, not secure versions. Member C owns the defensive implementations.
 
-Use a fresh Ubuntu VM with a snapshot. Access the website **from a browser inside the same VM** at `http://127.0.0.1:8080/`. If you need access from your host computer later, use an SSH port forward rather than making the deliberately insecure server publicly reachable.
+Demo accounts: `arcie`, `crosley`, `igor`, all using `password123` in the isolated lab.
 
-## 1. Install dependencies
+## Environment
 
-```bash
-sudo apt update
-sudo apt install -y apache2 php libapache2-mod-php php-cli php-sqlite3 sqlite3 unzip curl
-php -v
-php -m | grep -iE 'PDO|sqlite'
-```
+- Ubuntu VM, Apache with `libapache2-mod-php`, PHP with PDO SQLite, SQLite database.
+- Apache document root: `/var/www/cs4239-lab/public`.
+- Loopback binding: `127.0.0.1:8080` (not a publicly reachable listener).
+- Git development folder: `~/4239-g413/`; deployed application folder: `/var/www/cs4239-lab/`.
 
-## 2. Install source
+## Existing installation: upgrade to versioned routes
 
-Unzip the downloaded archive somewhere in your home directory, then copy the `cs4239-member-a-starter` folder contents to `/var/www/cs4239-lab`.
+**Do not reinitialize or delete your existing SQLite database.** It already contains your working accounts. Use the non-destructive migration in `scripts/migrate_versions.php`.
 
-```bash
-cd ~/Downloads
-unzip cs4239-member-a-starter.zip
-sudo mkdir -p /var/www/cs4239-lab
-sudo cp -a cs4239-member-a-starter/. /var/www/cs4239-lab/
-```
+1. Take a Git commit and make a VM snapshot (or back up the deployed application and SQLite file).
+2. Apply the updated project files to the Git working tree, removing old unversioned `upload.php`/`preview.php`/`download.php` entry points as listed in `docs/VERSIONED_LAYOUT.md`.
+3. Deploy updated `public/`, `src/` and `scripts/` into `/var/www/cs4239-lab/`, **without touching** `/var/www/cs4239-lab/data/`.
+4. Create `/public/scenarios/rce/v1/uploads/` and `/public/scenarios/xss/v1/uploads/` on the deployed app, owned by `www-data`.
+5. Run `sudo -u www-data php /var/www/cs4239-lab/scripts/migrate_versions.php` **after backing up SQLite**.
+6. Verify V1 routes using `exploits/` fixtures, then commit your source changes to Git.
 
-If the ZIP was extracted elsewhere, adjust the `cd` and source folder path.
+Detailed copy/paste commands are in `docs/VERSIONED_LAYOUT.md`.
 
-## 3. Give Apache write access only to the necessary lab directories
+For a completely new installation without an existing database, run `sudo -u www-data php /var/www/cs4239-lab/scripts/init_db.php` instead.
 
-```bash
-sudo chown -R www-data:www-data /var/www/cs4239-lab/data
-sudo chown -R www-data:www-data /var/www/cs4239-lab/public/scenarios/rce/uploads
-sudo chown -R www-data:www-data /var/www/cs4239-lab/public/scenarios/xss/uploads
-sudo -u www-data php /var/www/cs4239-lab/scripts/init_db.php
-```
+## Expected V1 results
 
-## 4. Configure Apache to listen ONLY on loopback
+- **RCE:** Upload `exploits/rce/fixtures/rce-marker.php` through `/scenarios/rce/v1/`; open its stored URL; observe the server-side marker.
+- **XSS:** Upload `exploits/xss/fixtures/xss-marker.svg` through `/scenarios/xss/v1/`; choose Preview; observe the browser-side marker.
+- **IDOR:** Upload `exploits/idor/fixtures/private-igor.txt` as Igor through `/scenarios/idor/v1/`; switch to Arcie; request the same ID through `/scenarios/idor/v1/download.php?id=N`.
 
-These commands modify Apache's default port configuration, so use a **dedicated VM**, not a machine hosting another site.
+`exploits/` holds lab test fixtures and eventual scripts; actual uploaded files are stored on the deployed Ubuntu filesystem and excluded from Git.
 
-```bash
-sudo cp /etc/apache2/ports.conf /etc/apache2/ports.conf.cs4239.bak
-printf 'Listen 127.0.0.1:8080\n' | sudo tee /etc/apache2/ports.conf
-sudo cp /var/www/cs4239-lab/setup/cs4239-lab.conf /etc/apache2/sites-available/cs4239-lab.conf
-sudo a2dissite 000-default.conf
-sudo a2ensite cs4239-lab.conf
-sudo apache2ctl configtest
-sudo systemctl restart apache2
-sudo ss -ltnp | grep ':8080'
-```
+## Research outcome
 
-The listening address should be `127.0.0.1:8080`, not `0.0.0.0:8080` or `[::]:8080`. If you see an Apache configuration error, **do not continue** until you resolve it.
-
-## 5. First end-to-end smoke tests
-
-1. Open `http://127.0.0.1:8080/` in the Ubuntu VM.
-2. Log in as `alice` with `alice123`.
-3. Visit each scenario using the dashboard.
-4. Upload `tests/fixtures/legitimate.txt` through the RCE page and verify that it has an Open link.
-5. Upload `tests/fixtures/rce-marker.php` through the RCE page. Use the Open link and verify the output `LAB_RCE_MARKER_EXECUTED`. **This is a lab-only server-side execution marker, not a reverse shell.**
-6. Upload `tests/fixtures/xss-marker.svg` through the XSS page. Click Preview; the marker should change to `LAB_XSS_MARKER_EXECUTED`. This confirms that uploaded active content can execute in the application's browser origin under this configuration.
-7. Upload `tests/fixtures/private-alice.txt` through the IDOR page and write down its numeric file ID.
-8. Log out and log in as `bob` with `bob123`.
-9. Visit `http://127.0.0.1:8080/scenarios/idor/download.php?id=THE_ID`. The Alice document should download, despite Bob not owning it. This is the IDOR vulnerability.
-
-**Never use sensitive files or production sessions in this lab.** If a marker fails, check Apache error log at `/var/log/apache2/cs4239-lab-error.log`, PHP modules, and the file permissions.
-
-## 6. Expected handoff to Member B
-
-- One Git repository containing this source code and setup instructions
-- One reproducible snapshot/tag: `vulnerable-baseline`
-- The three attack scenarios working on a clean machine
-- The exact Apache/PHP versions and a copy of the local site configuration
-- Screenshots or notes showing all three lab markers, including Alice/Bob cross-access
-- An architecture section and relevant explanations for the report
-
-## 7. Implementation notes / deliberate limitations
-
-- Intentional vulnerabilities are isolated to the lab scenario paths. This is not a secure production application.
-- `basename()` and generated storage prefixes avoid *accidental* pathname traversal and overwriting in these exercises; those are outside the three selected investigations.
-- Upload size is limited to 1 MB to protect lab stability. There is intentionally **no** file-type/content filtering in the vulnerable scenarios.
-- Both direct-upload scenarios keep files under the Apache document root; IDOR files are stored in `data/private/` outside the document root and delivered through a PHP endpoint.
-- The IDOR handler intentionally performs login authentication without object-level authorization.
-- The app omits production concerns such as CSRF tokens, rate limits, account management, and encryption, so do not claim the final system is production-safe.
-- The README test scripts are non-destructive; Member B should record what each security violation actually proves.
+The measurements concern **unauthorized server-side code execution**, **script execution in a victim browser in the app's origin**, and **cross-user disclosure of private files**. Simple upload acceptance or ordinary download alone does not prove a security vulnerability.

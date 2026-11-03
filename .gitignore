@@ -1,17 +1,18 @@
-# Runtime database, stored documents and session-related files
+# Runtime database and private files
 /data/*
 !/data/.gitkeep
-
-# Generated uploads — keep directories, not submitted files
+# Runtime uploads — store test inputs under /exploits instead
 /public/scenarios/rce/uploads/*
 !/public/scenarios/rce/uploads/.gitkeep
 /public/scenarios/xss/uploads/*
 !/public/scenarios/xss/uploads/.gitkeep
 /public/scenarios/*/v*/uploads/*
 !/public/scenarios/*/v*/uploads/.gitkeep
-
-# Local-only evidence, temporary or private test outputs
+# Do not commit private evidence, credentials or local outputs
+/results/private/
 /exploits/results/private/
 *.log
 *.tmp
 .DS_Store
+__pycache__/
+*.pyc

@@ -1,16 +1,18 @@
 <?php
 require __DIR__ . '/../../src/bootstrap.php';
 $user = require_user();
-if (!isset($scenario, $variant) || !in_array($scenario, ['rce', 'xss', 'idor'], true) || $variant !== 'v1') {
+if (!isset($scenario, $variant) || !in_array($scenario, ['rce', 'xss', 'idor'], true) || !in_array($variant, ['v1', 'v2', 'v3', 'patched'], true)) {
     http_response_code(404); exit('Version not implemented');
 }
 $headings = [
- 'rce' => 'RCE — V1: vulnerable baseline',
- 'xss' => 'XSS — V1: vulnerable baseline',
- 'idor' => 'IDOR — V1: vulnerable baseline'
+ 'rce' => 'RCE — ' . strtoupper($variant) . ($variant === 'v1' ? ': vulnerable baseline' : ': strict file validation'),
+ 'xss' => 'XSS — ' . strtoupper($variant),
+ 'idor' => 'IDOR — ' . strtoupper($variant)
 ];
 $descs = [
- 'rce' => 'Files are stored in a web-accessible, PHP-executable directory with no file-type validation.',
+ 'rce' => $variant === 'v1'
+    ? 'Files are stored in a web-accessible, PHP-executable directory with no file-type validation.'
+    : 'V2 enforces strict extension allowlisting and finfo MIME type verification.',
  'xss' => 'SVG/HTML uploads can be opened inside an unsandboxed same-origin preview.',
  'idor' => 'Documents are private in intent, but the download handler intentionally omits ownership authorization.'
 ];

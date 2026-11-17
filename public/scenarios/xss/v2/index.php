@@ -1,4 +1,4 @@
 <?php
 $scenario = 'xss';
 $variant = 'v2';
-require __DIR__ . '/../../../common/planned_variant.php';
+require __DIR__ . '/../../../common/upload_page.php';

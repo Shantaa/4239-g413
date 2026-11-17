@@ -2,13 +2,20 @@
 
 Experimental study of **server-side code execution (RCE)**, **stored XSS**, and **unauthorized file access (IDOR)** in one PHP/Apache file-sharing application. We evaluate **actual security violations**, not merely whether an upload is accepted.
 
-**Current status:** All three **V1 vulnerable scenarios work** on Member A's Ubuntu VM. **V2/V3** and `/scenarios/patched/` are placeholders awaiting the defence phase.
+**Current status:** All three **V1 vulnerable scenarios work**. RCE V2/V3,
+XSS V2/V3, and IDOR V2/V3 are implemented for the defence comparisons.
+`/scenarios/patched/` remains a placeholder.
+
+**Verified outcomes:** RCE V1 executes, RCE V2 rejects PHP uploads, and RCE
+V3 serves PHP as data. XSS V1 executes the SVG payload, XSS V2 downloads it,
+and XSS V3 blocks its script with CSP. IDOR V1 and V2 allow the unauthorized
+test access, while IDOR V3 enforces ownership authorization.
 
 > **Local lab only:** This project intentionally includes vulnerable code. Run it on a disposable Ubuntu VM, with Apache listening on `127.0.0.1:8080`. Do not expose it to other machines or use real files, accounts, or secrets.
 
 ## Versions and accounts
 
-| Investigation | V1 (working) | V2 (planned) | V3 (planned) |
+| Investigation | V1 (working) | V2 (working) | V3 (working) |
 | --- | --- | --- | --- |
 | **RCE** | Executable PHP uploads | File-type validation | Protected, non-executable storage |
 | **XSS** | Same-origin SVG/HTML preview | Safe file delivery | Content Security Policy |
@@ -25,7 +32,7 @@ public/                   Apache document root: dashboard, login, scenario route
   scenarios/rce/v1/       Vulnerable upload and web-executable storage
   scenarios/xss/v1/       Vulnerable upload and same-origin preview
   scenarios/idor/v1/      Vulnerable private-file download handler
-  scenarios/*/v2,v3/     Planned defence pages (placeholders)
+  scenarios/*/v2,v3/     Defensive comparison routes
   scenarios/patched/     Final integrated-app placeholder
   common/                Shared upload page and handler
 src/bootstrap.php        Auth/session, SQLite and route helpers
@@ -43,9 +50,9 @@ results/                 Sanitized observations (not session cookies/secrets)
 docs/                    Background migration/versioning details
 ```
 
-**Exploit naming:** `v1`, `v2`, `v3` identify the **application version to test**. For controlled comparison, the three RCE PHP files contain the **same payload**, as do the three XSS SVG files. The IDOR scripts contain identical test logic and derive the target route from their filename. **Do not assume V2/V3 are implemented or safe.** Instructions and notes are in the test files themselves.
+**Exploit naming:** `v1`, `v2`, `v3` identify the **application version to test**. For controlled comparison, the three RCE PHP files contain the **same payload**, as do the three XSS SVG files. The IDOR scripts share the same test flow and derive the target route from their filename; V1 uses a numeric ID, while V2/V3 use opaque tokens. V2 and V3 are implemented, but their security outcomes differ: IDOR V2 intentionally retains the ownership flaw, while IDOR V3 adds authorization. Instructions and notes are in the test files themselves.
 
-The `exploits/` files are **inputs to the experiments**, not saved upload destinations. Uploaded RCE/XSS V1 files go under the deployed `public/scenarios/<scenario>/v1/uploads/`; IDOR's private uploads go under deployed `data/private/v1/`. The SQLite database is at `data/lab.sqlite` and records the owner, scenario, version and stored path.
+The `exploits/` files are **inputs to the experiments**, not saved upload destinations. RCE V1/V2 uploads use public versioned upload directories; RCE V3 uploads go under `data/private/rce/v3/`. XSS V1 uses public storage, while XSS V2/V3 use `data/private/xss/v2/` and `data/private/xss/v3/`. IDOR V1/V2/V3 use `data/private/v1/`, `data/private/v2/`, and `data/private/v3/` respectively. The SQLite database is at `data/lab.sqlite` and records the owner, scenario, version, stored path and, for IDOR V2/V3, the opaque token.
 
 ## Fresh Ubuntu setup
 
@@ -61,6 +68,7 @@ sudo cp -a public src scripts setup /var/www/cs4239-lab/
 sudo install -d -o www-data -g www-data -m 750 /var/www/cs4239-lab/data
 sudo install -d -o www-data -g www-data -m 755 \
   /var/www/cs4239-lab/public/scenarios/rce/v1/uploads \
+  /var/www/cs4239-lab/public/scenarios/rce/v2/uploads \
   /var/www/cs4239-lab/public/scenarios/xss/v1/uploads
 sudo -u www-data php /var/www/cs4239-lab/scripts/init_db.php
 sudo cp /etc/apache2/ports.conf /etc/apache2/ports.conf.cs4239.bak
@@ -77,7 +85,7 @@ Open **Firefox inside Ubuntu** at `http://127.0.0.1:8080/`. Confirm Apache liste
 
 **Existing installation:** Keep the deployed `data/` and uploaded files. Only use `scripts/migrate_versions.php` when upgrading an **older pre-versioned** database; do not reset the existing accounts. See `docs/VERSIONED_LAYOUT.md`.
 
-## Verify vulnerable V1
+## Verify the scenarios
 
 | Scenario | Steps | Evidence |
 | --- | --- | --- |
@@ -85,11 +93,26 @@ Open **Firefox inside Ubuntu** at `http://127.0.0.1:8080/`. Confirm Apache liste
 | **XSS** | Sign in as Crosley; upload `exploits/xss/v1.svg` at `/scenarios/xss/v1/`; click **Preview**. | Preview marker changes to `LAB_XSS_MARKER_EXECUTED`, demonstrating script execution in the app's origin. |
 | **IDOR** | As Igor, upload `exploits/idor/private-igor.txt` at `/scenarios/idor/v1/` and record its file ID. Then try the IDOR script below as Arcie. | The script can read Igor's private marker despite Arcie not owning the file. |
 
+The table above verifies the vulnerable V1 baselines. The same inputs must be
+used against V2 and V3 to compare the defences; see
+[`results/README.md`](results/README.md) for the complete versioned outcome
+summary.
+
 ```bash
-python3 exploits/idor/v1.py <IGOR_FILE_ID>
+bash tests/rce_test.sh v1
+bash tests/rce_test.sh v2
+bash tests/rce_test.sh v3
+bash tests/idor_test.sh v1
+bash tests/idor_test.sh v2
+bash tests/idor_test.sh v3
 ```
 
-**IDOR scripts are run locally, not uploaded.** Future versions use `v2.py` and `v3.py`, with file IDs obtained from the corresponding version. These routes are currently placeholders. A normal owner download is not evidence of IDOR. For RCE/XSS, repeat the **same content** against later versions and record whether execution occurs, rather than changing the payload to fit the defence.
+**IDOR scripts are run locally, not uploaded.** IDOR V1 uses a numeric file
+ID; V2 and V3 use opaque tokens. A normal owner download is not evidence of
+IDOR. For RCE/XSS, repeat the **same content** against later versions and
+record whether execution occurs, rather than changing the payload to fit the
+defence. XSS is verified manually in a browser because script execution
+cannot be judged reliably by `curl`.
 
 ## Development and handoff
 
@@ -103,6 +126,7 @@ sudo cp -a src/. /var/www/cs4239-lab/src/
 sudo cp -a scripts/. /var/www/cs4239-lab/scripts/
 sudo chown -R www-data:www-data \
   /var/www/cs4239-lab/public/scenarios/rce/v1/uploads \
+  /var/www/cs4239-lab/public/scenarios/rce/v2/uploads \
   /var/www/cs4239-lab/public/scenarios/xss/v1/uploads
 ```
 

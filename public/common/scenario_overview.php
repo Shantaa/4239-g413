@@ -7,8 +7,8 @@ $catalog = [
         'description' => 'Compare upload validation with execution isolation. The primary security outcome is unauthorized server-side PHP execution.',
         'versions' => [
             'v1' => ['Vulnerable baseline', 'Unrestricted upload into a PHP-executable directory.', true],
-            'v2' => ['Upload validation', 'Extension and server-side content checks (planned).', false],
-            'v3' => ['Execution isolation', 'Non-executable storage and controlled delivery (planned).', false],
+            'v2' => ['Upload validation', 'Extension and server-side content checks.', true],
+            'v3' => ['Execution isolation', 'Non-executable storage and controlled delivery.', true],
         ],
     ],
     'xss' => [
@@ -16,8 +16,8 @@ $catalog = [
         'description' => 'Compare unsafe rendering with safe delivery and browser-side restrictions. The security outcome is script execution in the application origin.',
         'versions' => [
             'v1' => ['Vulnerable baseline', 'Uploaded SVG/HTML executed in a same-origin preview.', true],
-            'v2' => ['Safe file delivery', 'Attachment downloads and safe content handling (planned).', false],
-            'v3' => ['Content Security Policy', 'Browser script restrictions in the preview context (planned).', false],
+            'v2' => ['Safe file delivery', 'Attachment downloads and safe content handling.', true],
+            'v3' => ['Content Security Policy', 'Browser script restrictions in the preview context.', true],
         ],
     ],
     'idor' => [
@@ -25,8 +25,8 @@ $catalog = [
         'description' => 'Compare obscuring identifiers with enforcing authorization. The outcome is whether one user can read another user’s private file.',
         'versions' => [
             'v1' => ['Vulnerable baseline', 'Sequential IDs with no per-file ownership check.', true],
-            'v2' => ['Unpredictable identifiers', 'Opaque file identifiers without ownership checks (planned).', false],
-            'v3' => ['Ownership authorization', 'Enforce object-level access control (planned).', false],
+            'v2' => ['Unpredictable identifiers', 'Opaque file identifiers without ownership checks.', true],
+            'v3' => ['Ownership authorization', 'Enforce object-level access control.', true],
         ],
     ],
 ];

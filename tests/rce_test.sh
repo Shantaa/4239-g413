@@ -39,7 +39,8 @@ fi
 
 echo "-- Reading file list, finding newest stored upload"
 LINK=$(curl -s -b "$CJ" "$BASE/scenarios/rce/$VER/" \
-       | grep -oE 'href="[^"]*uploads/[^"]+"' | head -1 | sed -E 's/^href="|"$//g')
+       | grep -oE 'href="[^"]*(uploads/[^"]+|download\.php\?id=[0-9]+)"' \
+       | head -1 | sed -E 's/^href="|"$//g')
 [ -n "$LINK" ] || { echo "FAIL: could not find uploaded file link"; exit 2; }
 echo "   stored at: $LINK"
 
@@ -49,7 +50,7 @@ echo "---- server response ----"
 echo "$OUT"
 echo "-------------------------"
 
-if echo "$OUT" | grep -q "LAB_RCE_MARKER_EXECUTED"; then
+if echo "$OUT" | grep -q "^LAB_RCE_MARKER_EXECUTED$"; then
   WHO=$(echo "$OUT" | grep -i "Result:" | head -1)
   echo "RESULT: *** RCE CONFIRMED *** PHP executed on the server. $WHO"
   exit 0

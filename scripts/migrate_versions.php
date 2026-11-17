@@ -18,8 +18,23 @@ if (!$hasVariant) {
 } else {
     echo 'files.variant already exists.' . PHP_EOL;
 }
+$hasToken = false;
+foreach ($cols as $col) {
+    if ($col['name'] === 'public_token') { $hasToken = true; break; }
+}
+if (!$hasToken) {
+    $pdo->exec("ALTER TABLE files ADD COLUMN public_token TEXT");
+    echo 'Added files.public_token.' . PHP_EOL;
+}
+$pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_files_public_token ON files(public_token)');
 $pdo->exec("UPDATE files SET variant = 'v1' WHERE variant IS NULL OR variant = ''");
 if (!is_dir(DATA_ROOT . '/private/v1') && !mkdir(DATA_ROOT . '/private/v1', 0750, true)) {
     throw new RuntimeException('Could not create data/private/v1');
+}
+if (!is_dir(DATA_ROOT . '/private/v2') && !mkdir(DATA_ROOT . '/private/v2', 0750, true)) {
+    throw new RuntimeException('Could not create data/private/v2');
+}
+if (!is_dir(DATA_ROOT . '/private/xss/v2') && !mkdir(DATA_ROOT . '/private/xss/v2', 0750, true)) {
+    throw new RuntimeException('Could not create data/private/xss/v2');
 }
 echo 'Existing uploads and users preserved. Migration complete.' . PHP_EOL;

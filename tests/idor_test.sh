@@ -3,9 +3,9 @@
 #
 # Drives the whole IDOR experiment end to end:
 #   1. Logs in as Igor (victim) and uploads a private file.
-#   2. Reads back the file ID the app assigned to it.
+#   2. Reads back the version-specific identifier assigned to it.
 #   3. Runs exploits/idor/<ver>.py, which logs in as Arcie (attacker) and
-#      requests Igor's file ID through the download route with no ownership.
+#      requests Igor's file through the download route with no ownership.
 # Receiving Igor's private marker demonstrates unauthorized disclosure (IDOR).
 #
 # Usage:   tests/idor_test.sh [version] [base_url] 
@@ -41,11 +41,16 @@ if [ "$code" != "200" ] && [ "$code" != "302" ]; then
   echo "Upload returned HTTP $code (version likely not implemented)."; exit 1
 fi
 
-echo "-- Reading back the file ID the app assigned to Igor's newest upload"
-FID=$(curl -s -b "$CJ" "$BASE/scenarios/idor/$VER/" \
-      | grep -oE '<td>[0-9]+</td>' | head -1 | grep -oE '[0-9]+')
-[ -n "$FID" ] || { echo "FAIL: could not read Igor's file ID"; exit 2; }
-echo "   Igor's file ID = $FID"
+echo "-- Reading back the identifier assigned to Igor's newest upload"
+if [ "$VER" = "v2" ]; then
+  FID=$(curl -s -b "$CJ" "$BASE/scenarios/idor/$VER/" \
+        | grep -oE '<td>[a-f0-9]{32}</td>' | head -1 | sed -E 's#</?td>##g')
+else
+  FID=$(curl -s -b "$CJ" "$BASE/scenarios/idor/$VER/" \
+        | grep -oE '<td>[0-9]+</td>' | head -1 | grep -oE '[0-9]+')
+fi
+[ -n "$FID" ] || { echo "FAIL: could not read Igor's file identifier"; exit 2; }
+echo "   Igor's file identifier = $FID"
 
 echo "-- Running attacker PoC as Arcie: python3 exploits/idor/$VER.py $FID"
 echo "------------------- PoC output -------------------"

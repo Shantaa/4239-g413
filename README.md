@@ -2,7 +2,7 @@
 
 Experimental study of **server-side code execution (RCE)**, **stored XSS**, and **unauthorized file access (IDOR)** in one PHP/Apache file-sharing application. We evaluate **actual security violations**, not merely whether an upload is accepted.
 
-**Current status:** All three **V1 vulnerable scenarios work** on Member A's Ubuntu VM. **V2/V3** and `/scenarios/patched/` are placeholders awaiting the defence phase.
+**Current status:** All three **V1 vulnerable scenarios work**. RCE V2, XSS V2, and IDOR V2 are implemented for the first defence comparisons. V3 and `/scenarios/patched/` remain placeholders.
 
 > **Local lab only:** This project intentionally includes vulnerable code. Run it on a disposable Ubuntu VM, with Apache listening on `127.0.0.1:8080`. Do not expose it to other machines or use real files, accounts, or secrets.
 

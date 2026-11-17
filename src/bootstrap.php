@@ -38,6 +38,12 @@ function get_file(int $id): ?array {
     $row = $st->fetch();
     return $row ?: null;
 }
+function get_file_by_token(string $token): ?array {
+    $st = db()->prepare('SELECT * FROM files WHERE public_token = ?');
+    $st->execute([$token]);
+    $row = $st->fetch();
+    return $row ?: null;
+}
 function find_my_files(int $owner, string $scenario, string $variant): array {
     $st = db()->prepare('SELECT * FROM files WHERE owner_id = ? AND scenario = ? AND variant = ? ORDER BY id DESC');
     $st->execute([$owner, $scenario, $variant]);
@@ -51,8 +57,16 @@ function scenario_url(string $scenario, string $variant = ''): string {
 function file_link(array $file): string {
     $scenario = (string)$file['scenario'];
     $variant = (string)($file['variant'] ?? 'v1');
-    if ($scenario === 'idor') return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
+    if ($scenario === 'idor') {
+        if ($variant === 'v2') {
+            return scenario_url($scenario, $variant) . 'download.php?token=' . rawurlencode((string)$file['public_token']);
+        }
+        return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
+    }
     if (!in_array($scenario, ['rce', 'xss'], true)) throw new InvalidArgumentException('Unknown file scenario');
+    if ($scenario === 'xss' && $variant === 'v2') {
+        return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
+    }
     // Original pre-versioning uploads remain accessible without losing previously stored files.
     $legacyDir = PUBLIC_ROOT . '/scenarios/' . $scenario . '/uploads/';
     $legacy = str_starts_with((string)$file['disk_path'], $legacyDir);

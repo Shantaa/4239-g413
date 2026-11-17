@@ -18,7 +18,7 @@ The `/scenarios/patched/` page is a **placeholder only**. No security guarantees
 public/scenarios/<rce|xss|idor>/index.php      investigation landing page
 public/scenarios/<rce|xss|idor>/v1/index.php   functioning baseline
 public/scenarios/<rce|xss|idor>/v1/upload.php  baseline upload endpoint
-public/scenarios/<rce|xss|idor>/v2/index.php   placeholder
+public/scenarios/<rce|xss|idor>/v2/index.php   first defensive comparison
 public/scenarios/<rce|xss|idor>/v3/index.php   placeholder
 public/scenarios/patched/index.php            placeholder
 public/common/                               shared rendering and upload handler
@@ -27,7 +27,7 @@ scripts/migrate_versions.php                 preserves existing SQLite records
 exploits/                                    versioned test fixtures and later automation
 ```
 
-RCE/XSS V1 newly uploaded files go to `public/scenarios/<scenario>/v1/uploads/`. Existing uploads from the old unversioned layout remain available from the old `public/scenarios/<scenario>/uploads/` folders. IDOR V1 new files go to `data/private/v1/`; older IDOR files remain at their existing paths.
+RCE V1 newly uploaded files go to `public/scenarios/rce/v1/uploads/`. XSS V1 files remain web-accessible for the vulnerable baseline, while XSS V2 files go to `data/private/xss/v2/` and are delivered as attachments. Existing uploads from the old unversioned layout remain available from the old `public/scenarios/<scenario>/uploads/` folders. IDOR V1 files go to `data/private/v1/`; IDOR V2 files go to `data/private/v2/` and use opaque tokens. Older IDOR files remain at their existing paths.
 
 ## Deploy on existing Ubuntu VM
 
@@ -87,6 +87,9 @@ rm -f public/scenarios/xss/preview.php public/scenarios/idor/download.php
 - `/scenarios/xss/` — version selection → `/scenarios/xss/v1/`
 - `/scenarios/idor/` — version selection → `/scenarios/idor/v1/`
 - `/scenarios/patched/` — placeholder
-- `/scenarios/rce/v2/` etc. — placeholder (not yet secure)
+- `/scenarios/rce/v2/` — upload validation comparison
+- `/scenarios/xss/v2/` — safe file delivery comparison
+- `/scenarios/idor/v2/` — opaque-token comparison without ownership checks
+- V3 routes — placeholders (not yet implemented)
 
 If V1 uploads fail, check ownership of the V1 upload directory and `/var/log/apache2/cs4239-lab-error.log`.

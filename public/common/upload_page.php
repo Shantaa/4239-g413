@@ -12,13 +12,19 @@ $headings = [
 $descs = [
  'rce' => $variant === 'v1'
     ? 'Files are stored in a web-accessible, PHP-executable directory with no file-type validation.'
-    : 'V2 enforces strict extension allowlisting and finfo MIME type verification.',
+    : ($variant === 'v2'
+        ? 'V2 enforces strict extension allowlisting and finfo MIME type verification.'
+        : 'V3 stores uploads outside the web root and delivers them without execution.'),
  'xss' => $variant === 'v1'
     ? 'SVG/HTML uploads can be opened inside an unsandboxed same-origin preview.'
-    : 'Files are stored outside the web root and delivered as downloads with a neutral content type.',
+    : ($variant === 'v2'
+        ? 'Files are stored outside the web root and delivered as downloads with a neutral content type.'
+        : 'Files are previewed with a Content Security Policy that blocks script execution.'),
  'idor' => $variant === 'v1'
     ? 'Documents are private in intent, but the download handler intentionally omits ownership authorization.'
-    : 'Files use opaque identifiers, but V2 intentionally does not enforce ownership authorization.'
+    : ($variant === 'v2'
+        ? 'Files use opaque identifiers, but V2 intentionally does not enforce ownership authorization.'
+        : 'Files use opaque identifiers and require ownership authorization.'),
 ];
 page_header($headings[$scenario]);
 ?>
@@ -31,7 +37,7 @@ page_header($headings[$scenario]);
 <table><thead><tr><th><?= $scenario === 'idor' && $variant === 'v2' ? 'Opaque identifier' : 'ID' ?></th><th>Original filename</th><th>Action</th></tr></thead><tbody>
 <?php foreach (find_my_files((int)$user['id'], $scenario, $variant) as $file): ?>
 <tr><td><?= $scenario === 'idor' && $variant === 'v2' ? e((string)$file['public_token']) : (int)$file['id'] ?></td><td><?= e((string)$file['original_name']) ?></td><td>
-<?php if ($scenario === 'xss' && $variant === 'v1'): ?>
+<?php if ($scenario === 'xss' && in_array($variant, ['v1', 'v3'], true)): ?>
 <a href="<?= e(scenario_url($scenario, $variant)) ?>preview.php?id=<?= (int)$file['id'] ?>">Preview</a> ·
 <?php endif; ?>
 <a href="<?= e(file_link($file)) ?>"><?= $scenario === 'idor' ? 'Download' : 'Open uploaded file' ?></a>

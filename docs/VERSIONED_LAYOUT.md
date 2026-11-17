@@ -19,7 +19,7 @@ public/scenarios/<rce|xss|idor>/index.php      investigation landing page
 public/scenarios/<rce|xss|idor>/v1/index.php   functioning baseline
 public/scenarios/<rce|xss|idor>/v1/upload.php  baseline upload endpoint
 public/scenarios/<rce|xss|idor>/v2/index.php   first defensive comparison
-public/scenarios/<rce|xss|idor>/v3/index.php   placeholder
+public/scenarios/<rce|xss|idor>/v3/index.php   second defensive comparison
 public/scenarios/patched/index.php            placeholder
 public/common/                               shared rendering and upload handler
 src/bootstrap.php                            database, auth, and route helpers
@@ -27,7 +27,16 @@ scripts/migrate_versions.php                 preserves existing SQLite records
 exploits/                                    versioned test fixtures and later automation
 ```
 
-RCE V1 newly uploaded files go to `public/scenarios/rce/v1/uploads/`. XSS V1 files remain web-accessible for the vulnerable baseline, while XSS V2 files go to `data/private/xss/v2/` and are delivered as attachments. Existing uploads from the old unversioned layout remain available from the old `public/scenarios/<scenario>/uploads/` folders. IDOR V1 files go to `data/private/v1/`; IDOR V2 files go to `data/private/v2/` and use opaque tokens. Older IDOR files remain at their existing paths.
+RCE V1 newly uploaded files go to `public/scenarios/rce/v1/uploads/`. RCE V3
+files go to `data/private/rce/v3/` and are delivered without execution. XSS V1
+files remain web-accessible for the vulnerable baseline, XSS V2 files go to
+`data/private/xss/v2/` and are delivered as attachments, and XSS V3 files go
+to `data/private/xss/v3/` and are previewed with a CSP that blocks scripts.
+Existing uploads from the old unversioned layout remain available from the old
+`public/scenarios/<scenario>/uploads/` folders. IDOR V1 files go to
+`data/private/v1/`; IDOR V2/V3 files go to `data/private/v2/` or
+`data/private/v3/` and use opaque tokens. IDOR V3 additionally checks
+ownership. Older IDOR files remain at their existing paths.
 
 ## Deploy on existing Ubuntu VM
 
@@ -90,6 +99,8 @@ rm -f public/scenarios/xss/preview.php public/scenarios/idor/download.php
 - `/scenarios/rce/v2/` — upload validation comparison
 - `/scenarios/xss/v2/` — safe file delivery comparison
 - `/scenarios/idor/v2/` — opaque-token comparison without ownership checks
-- V3 routes — placeholders (not yet implemented)
+- `/scenarios/rce/v3/` — non-executable private storage comparison
+- `/scenarios/xss/v3/` — CSP-protected preview comparison
+- `/scenarios/idor/v3/` — opaque-token ownership authorization comparison
 
 If V1 uploads fail, check ownership of the V1 upload directory and `/var/log/apache2/cs4239-lab-error.log`.

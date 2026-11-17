@@ -1,0 +1,4 @@
+<?php
+$scenario = 'idor';
+$variant = 'v3';
+require __DIR__ . '/../../../common/upload_handler.php';

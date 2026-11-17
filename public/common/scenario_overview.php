@@ -8,7 +8,7 @@ $catalog = [
         'versions' => [
             'v1' => ['Vulnerable baseline', 'Unrestricted upload into a PHP-executable directory.', true],
             'v2' => ['Upload validation', 'Extension and server-side content checks.', true],
-            'v3' => ['Execution isolation', 'Non-executable storage and controlled delivery (planned).', false],
+            'v3' => ['Execution isolation', 'Non-executable storage and controlled delivery.', true],
         ],
     ],
     'xss' => [
@@ -17,7 +17,7 @@ $catalog = [
         'versions' => [
             'v1' => ['Vulnerable baseline', 'Uploaded SVG/HTML executed in a same-origin preview.', true],
             'v2' => ['Safe file delivery', 'Attachment downloads and safe content handling.', true],
-            'v3' => ['Content Security Policy', 'Browser script restrictions in the preview context (planned).', false],
+            'v3' => ['Content Security Policy', 'Browser script restrictions in the preview context.', true],
         ],
     ],
     'idor' => [
@@ -26,7 +26,7 @@ $catalog = [
         'versions' => [
             'v1' => ['Vulnerable baseline', 'Sequential IDs with no per-file ownership check.', true],
             'v2' => ['Unpredictable identifiers', 'Opaque file identifiers without ownership checks.', true],
-            'v3' => ['Ownership authorization', 'Enforce object-level access control (planned).', false],
+            'v3' => ['Ownership authorization', 'Enforce object-level access control.', true],
         ],
     ],
 ];

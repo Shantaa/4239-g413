@@ -6,6 +6,9 @@ if (!is_dir(DATA_ROOT)) mkdir(DATA_ROOT, 0750, true);
 if (!is_dir(DATA_ROOT . '/private/v1')) mkdir(DATA_ROOT . '/private/v1', 0750, true);
 if (!is_dir(DATA_ROOT . '/private/v2')) mkdir(DATA_ROOT . '/private/v2', 0750, true);
 if (!is_dir(DATA_ROOT . '/private/xss/v2')) mkdir(DATA_ROOT . '/private/xss/v2', 0750, true);
+if (!is_dir(DATA_ROOT . '/private/rce/v3')) mkdir(DATA_ROOT . '/private/rce/v3', 0750, true);
+if (!is_dir(DATA_ROOT . '/private/xss/v3')) mkdir(DATA_ROOT . '/private/xss/v3', 0750, true);
+if (!is_dir(DATA_ROOT . '/private/v3')) mkdir(DATA_ROOT . '/private/v3', 0750, true);
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL)');
 $pdo->exec("CREATE TABLE IF NOT EXISTS files (

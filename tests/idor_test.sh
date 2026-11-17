@@ -42,7 +42,7 @@ if [ "$code" != "200" ] && [ "$code" != "302" ]; then
 fi
 
 echo "-- Reading back the identifier assigned to Igor's newest upload"
-if [ "$VER" = "v2" ]; then
+if [ "$VER" = "v2" ] || [ "$VER" = "v3" ]; then
   FID=$(curl -s -b "$CJ" "$BASE/scenarios/idor/$VER/" \
         | grep -oE '<td>[a-f0-9]{32}</td>' | head -1 | sed -E 's#</?td>##g')
 else

@@ -58,13 +58,19 @@ function file_link(array $file): string {
     $scenario = (string)$file['scenario'];
     $variant = (string)($file['variant'] ?? 'v1');
     if ($scenario === 'idor') {
-        if ($variant === 'v2') {
+        if (in_array($variant, ['v2', 'v3'], true)) {
             return scenario_url($scenario, $variant) . 'download.php?token=' . rawurlencode((string)$file['public_token']);
         }
         return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
     }
     if (!in_array($scenario, ['rce', 'xss'], true)) throw new InvalidArgumentException('Unknown file scenario');
     if ($scenario === 'xss' && $variant === 'v2') {
+        return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
+    }
+    if ($scenario === 'xss' && $variant === 'v3') {
+        return scenario_url($scenario, $variant) . 'preview.php?id=' . (int)$file['id'];
+    }
+    if ($scenario === 'rce' && $variant === 'v3') {
         return scenario_url($scenario, $variant) . 'download.php?id=' . (int)$file['id'];
     }
     // Original pre-versioning uploads remain accessible without losing previously stored files.

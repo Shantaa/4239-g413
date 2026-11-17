@@ -42,11 +42,14 @@ if ($scenario === 'rce' && $variant === 'v2') {
     }
 }
 
-// V2 storage defences: keep XSS V2 outside the web root and IDOR files outside
-// public storage; RCE/XSS V1 retain their intentionally vulnerable layout.
+// V2/V3 storage defences: keep hardened uploads outside the web root. V1
+// retains its intentionally vulnerable public storage for comparison.
 $stored = bin2hex(random_bytes(8)) . '_' . $name;
-$dest = $scenario === 'idor' || ($scenario === 'xss' && $variant === 'v2')
-    ? DATA_ROOT . '/private/' . ($scenario === 'xss' ? 'xss/' : '') . $variant
+$private_storage = $scenario === 'idor'
+    || ($scenario === 'xss' && in_array($variant, ['v2', 'v3'], true))
+    || ($scenario === 'rce' && $variant === 'v3');
+$dest = $private_storage
+    ? DATA_ROOT . '/private/' . ($scenario === 'xss' || $scenario === 'rce' ? $scenario . '/' : '') . $variant
     : PUBLIC_ROOT . '/scenarios/' . $scenario . '/' . $variant . '/uploads';
 
 if (!is_dir($dest) || !is_writable($dest)) { http_response_code(500); exit('Upload directory is not writable.'); }
@@ -55,9 +58,11 @@ $target = $dest . '/' . $stored;
 if (!move_uploaded_file($f['tmp_name'], $target)) { http_response_code(500); exit('Could not store uploaded file.'); }
 
 try {
-    // IDOR V2 uses an opaque token instead of exposing the sequential DB ID.
-    // V3 is responsible for adding the ownership check.
-    $token = ($scenario === 'idor' && $variant === 'v2') ? bin2hex(random_bytes(16)) : null;
+    // IDOR V2/V3 use opaque tokens instead of exposing sequential DB IDs.
+    // V3 additionally checks ownership when the token is used for download.
+    $token = ($scenario === 'idor' && in_array($variant, ['v2', 'v3'], true))
+        ? bin2hex(random_bytes(16))
+        : null;
     $st = db()->prepare('INSERT INTO files (owner_id, scenario, variant, original_name, stored_name, disk_path, content_type, public_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     // Use the validated finfo $mime for DB storage if V2, otherwise fall back to the unverified client type
     $db_mime = ($scenario === 'rce' && $variant === 'v2') ? $mime : (string)($f['type'] ?? 'application/octet-stream');

@@ -8,7 +8,7 @@
 #      requests Igor's file ID through the download route with no ownership.
 # Receiving Igor's private marker demonstrates unauthorized disclosure (IDOR).
 #
-# Usage:   tests/idor_test.sh [version] [base_url]
+# Usage:   tests/idor_test.sh [version] [base_url] 
 #   version   v1 (default) | v2 | v3   -- application version to test
 #   base_url  default http://127.0.0.1:8080  (localhost only)
 #

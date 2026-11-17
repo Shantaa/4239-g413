@@ -50,7 +50,7 @@ echo "---- server response ----"
 echo "$OUT"
 echo "-------------------------"
 
-if echo "$OUT" | grep -q "LAB_RCE_MARKER_EXECUTED"; then
+if echo "$OUT" | grep -q "^LAB_RCE_MARKER_EXECUTED$"; then
   WHO=$(echo "$OUT" | grep -i "Result:" | head -1)
   echo "RESULT: *** RCE CONFIRMED *** PHP executed on the server. $WHO"
   exit 0

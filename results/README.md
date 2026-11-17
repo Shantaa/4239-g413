@@ -25,12 +25,9 @@ Live cookie values in screenshots are redacted here.
 | [RCE](rce-v1.md)  | v1 | VULNERABLE — server command execution as `www-data` |
 | [XSS](xss-v1.md)  | v1 | VULNERABLE — cross-victim stored XSS; session cookie not `HttpOnly` |
 | [IDOR](idor-v1.md) | v1 | VULNERABLE — authenticated user reads another user's private file |
-
-| Scenario | Target | Outcome |
-| --- | --- | --- |
 | [RCE](rce-v2.md) | v2 | BLOCKED — PHP upload rejected by extension/MIME validation |
-| [RCE](rce-v3.md) | v3 | BLOCKED — PHP stored privately and served as data |
 | [XSS](xss-v2.md) | v2 | BLOCKED — active SVG delivered as an attachment |
-| [XSS](xss-v3.md) | v3 | BLOCKED — CSP prevents SVG script execution |
 | [IDOR](idor-v2.md) | v2 | VULNERABLE BY DESIGN — opaque token without ownership authorization |
+| [RCE](rce-v3.md) | v3 | BLOCKED — PHP stored privately and served as data |
+| [XSS](xss-v3.md) | v3 | BLOCKED — CSP prevents SVG script execution |
 | [IDOR](idor-v3.md) | v3 | BLOCKED — ownership authorization denies unauthorized access |

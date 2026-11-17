@@ -53,7 +53,7 @@ echo "-------------------------"
 if echo "$OUT" | grep -q "^LAB_RCE_MARKER_EXECUTED$"; then
   WHO=$(echo "$OUT" | grep -i "Result:" | head -1)
   echo "RESULT: *** RCE CONFIRMED *** PHP executed on the server. $WHO"
-  exit 0
+  exit 0  1
 else
   echo "RESULT: no RCE — the file was served as data, not executed."
   exit 1

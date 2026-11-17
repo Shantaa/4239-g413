@@ -34,9 +34,9 @@ page_header($headings[$scenario]);
 <button type="submit">Upload lab file</button>
 </form>
 <h2>Your files in this version</h2>
-<table><thead><tr><th><?= $scenario === 'idor' && $variant === 'v2' ? 'Opaque identifier' : 'ID' ?></th><th>Original filename</th><th>Action</th></tr></thead><tbody>
+<table><thead><tr><th><?= $scenario === 'idor' && in_array($variant, ['v2', 'v3'], true) ? 'Opaque identifier' : 'ID' ?></th><th>Original filename</th><th>Action</th></tr></thead><tbody>
 <?php foreach (find_my_files((int)$user['id'], $scenario, $variant) as $file): ?>
-<tr><td><?= $scenario === 'idor' && $variant === 'v2' ? e((string)$file['public_token']) : (int)$file['id'] ?></td><td><?= e((string)$file['original_name']) ?></td><td>
+<tr><td><?= $scenario === 'idor' && in_array($variant, ['v2', 'v3'], true) ? e((string)$file['public_token']) : (int)$file['id'] ?></td><td><?= e((string)$file['original_name']) ?></td><td>
 <?php if ($scenario === 'xss' && in_array($variant, ['v1', 'v3'], true)): ?>
 <a href="<?= e(scenario_url($scenario, $variant)) ?>preview.php?id=<?= (int)$file['id'] ?>">Preview</a> ·
 <?php endif; ?>

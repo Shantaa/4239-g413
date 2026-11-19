@@ -19,15 +19,17 @@ $name = basename(str_replace('\\', '/', (string)$f['name']));
 $name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $name);
 if ($name === '' || $name === '.' || $name === '..') { http_response_code(400); exit('Invalid filename'); }
 
-// V2 RCE DEFENCE
-if ($scenario === 'rce' && $variant === 'v2') {
+// RCE defence shared by V2 and the combined patched build. The allowlist is
+// intentionally checked independently of the supplied filename and client MIME
+// type: both extension and server-detected content must be expected.
+if ($scenario === 'rce' && in_array($variant, ['v2', 'patched'], true)) {
     // Strict Extension Allowlist
     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
     $allowed_exts = ['txt', 'png', 'jpg', 'jpeg', 'pdf'];
 
     if (!in_array($ext, $allowed_exts, true)) {
         http_response_code(403);
-        exit('V2 Defence Blocked: File extension .' . htmlspecialchars($ext) . ' is not allowed.');
+        exit('RCE defence blocked: file extension .' . htmlspecialchars($ext) . ' is not allowed.');
     }
 
     // Strict Content/MIME Type Verification using finfo
@@ -38,7 +40,28 @@ if ($scenario === 'rce' && $variant === 'v2') {
     $allowed_mimes = ['text/plain', 'image/png', 'image/jpeg', 'application/pdf'];
     if (!in_array($mime, $allowed_mimes, true)) {
         http_response_code(403);
-        exit('V2 Defence Blocked: Invalid file content type (' . htmlspecialchars($mime) . ').');
+        exit('RCE defence blocked: invalid file content type (' . htmlspecialchars($mime) . ').');
+    }
+}
+
+// Patched XSS defence: do not reject solely on a browser-supplied MIME type,
+// and keep active document formats in private storage for controlled preview.
+// The preview route adds CSP/sandbox headers; allowing ordinary text/SVG/HTML
+// here preserves useful uploads while preventing direct public script routes.
+if ($scenario === 'xss' && $variant === 'patched') {
+    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+    $allowed_exts = ['svg', 'html', 'htm', 'txt'];
+    if (!in_array($ext, $allowed_exts, true)) {
+        http_response_code(403);
+        exit('Patched defence blocked: extension .' . htmlspecialchars($ext) . ' is not allowed.');
+    }
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $f['tmp_name']);
+    finfo_close($finfo);
+    $allowed_mimes = ['image/svg+xml', 'text/html', 'text/plain', 'application/xhtml+xml'];
+    if (!in_array($mime, $allowed_mimes, true)) {
+        http_response_code(403);
+        exit('Patched defence blocked: invalid content type (' . htmlspecialchars($mime) . ').');
     }
 }
 
@@ -46,8 +69,8 @@ if ($scenario === 'rce' && $variant === 'v2') {
 // retains its intentionally vulnerable public storage for comparison.
 $stored = bin2hex(random_bytes(8)) . '_' . $name;
 $private_storage = $scenario === 'idor'
-    || ($scenario === 'xss' && in_array($variant, ['v2', 'v3'], true))
-    || ($scenario === 'rce' && $variant === 'v3');
+    || ($scenario === 'xss' && in_array($variant, ['v2', 'v3', 'patched'], true))
+    || ($scenario === 'rce' && in_array($variant, ['v3', 'patched'], true));
 $dest = $private_storage
     ? DATA_ROOT . '/private/' . ($scenario === 'xss' || $scenario === 'rce' ? $scenario . '/' : '') . $variant
     : PUBLIC_ROOT . '/scenarios/' . $scenario . '/' . $variant . '/uploads';
@@ -58,14 +81,19 @@ $target = $dest . '/' . $stored;
 if (!move_uploaded_file($f['tmp_name'], $target)) { http_response_code(500); exit('Could not store uploaded file.'); }
 
 try {
-    // IDOR V2/V3 use opaque tokens instead of exposing sequential DB IDs.
-    // V3 additionally checks ownership when the token is used for download.
-    $token = ($scenario === 'idor' && in_array($variant, ['v2', 'v3'], true))
-        ? bin2hex(random_bytes(16))
+    // IDOR V2/V3/patched use opaque tokens instead of exposing sequential DB IDs.
+    // V3/patched additionally check ownership when the token is used for download.
+    // random_bytes(32) provides 256 bits of randomness; hex encoding makes
+    // the token safe to transmit and match as an opaque URL parameter.
+    $token = ($scenario === 'idor' && in_array($variant, ['v2', 'v3', 'patched'], true))
+        ? ($variant === 'patched' ? bin2hex(random_bytes(32)) : bin2hex(random_bytes(16)))
         : null;
     $st = db()->prepare('INSERT INTO files (owner_id, scenario, variant, original_name, stored_name, disk_path, content_type, public_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     // Use the validated finfo $mime for DB storage if V2, otherwise fall back to the unverified client type
-    $db_mime = ($scenario === 'rce' && $variant === 'v2') ? $mime : (string)($f['type'] ?? 'application/octet-stream');
+    $db_mime = (($scenario === 'rce' && in_array($variant, ['v2', 'patched'], true))
+        || ($scenario === 'xss' && $variant === 'patched'))
+        ? $mime
+        : (string)($f['type'] ?? 'application/octet-stream');
     $st->execute([(int)$user['id'], $scenario, $variant, (string)$f['name'], $stored, $target, $db_mime, $token]);
 } catch (Throwable $ex) {
     unlink($target); throw $ex;

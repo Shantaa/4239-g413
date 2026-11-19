@@ -31,3 +31,4 @@ Live cookie values in screenshots are redacted here.
 | [RCE](rce-v3.md) | v3 | BLOCKED — PHP stored privately and served as data |
 | [XSS](xss-v3.md) | v3 | BLOCKED — CSP prevents SVG script execution |
 | [IDOR](idor-v3.md) | v3 | BLOCKED — ownership authorization denies unauthorized access |
+| [Combined](patched.md) | patched | IMPLEMENTED / PENDING LIVE TESTS — RCE, XSS, and IDOR protections are combined; XSS remains manual and browser evidence is not yet claimed |

@@ -5,26 +5,32 @@ if (!isset($scenario, $variant) || !in_array($scenario, ['rce', 'xss', 'idor'], 
     http_response_code(404); exit('Version not implemented');
 }
 $headings = [
- 'rce' => 'RCE — ' . strtoupper($variant) . ($variant === 'v1' ? ': vulnerable baseline' : ': strict file validation'),
+ 'rce' => 'RCE — ' . strtoupper($variant) . ($variant === 'v1' ? ': vulnerable baseline' : ($variant === 'patched' ? ': hardened combined build' : ': strict file validation')),
  'xss' => 'XSS — ' . strtoupper($variant),
  'idor' => 'IDOR — ' . strtoupper($variant)
 ];
 $descs = [
  'rce' => $variant === 'v1'
     ? 'Files are stored in a web-accessible, PHP-executable directory with no file-type validation.'
-    : ($variant === 'v2'
-        ? 'V2 enforces strict extension allowlisting and finfo MIME type verification.'
-        : 'V3 stores uploads outside the web root and delivers them without execution.'),
+    : ($variant === 'patched'
+        ? 'The combined build uses a strict extension/MIME allowlist, private storage, octet-stream attachment delivery, and nosniff.'
+        : ($variant === 'v2'
+            ? 'V2 enforces strict extension allowlisting and finfo MIME type verification.'
+            : 'V3 stores uploads outside the web root and delivers them without execution.')),
  'xss' => $variant === 'v1'
     ? 'SVG/HTML uploads can be opened inside an unsandboxed same-origin preview.'
-    : ($variant === 'v2'
-        ? 'Files are stored outside the web root and delivered as downloads with a neutral content type.'
-        : 'Files are previewed with a Content Security Policy that blocks script execution.'),
+    : ($variant === 'patched'
+        ? 'The combined build stores active content privately and serves static SVG/HTML previews with CSP sandboxing and script sources disabled.'
+        : ($variant === 'v2'
+            ? 'Files are stored outside the web root and delivered as downloads with a neutral content type.'
+            : 'Files are previewed with a Content Security Policy that blocks script execution.')),
  'idor' => $variant === 'v1'
     ? 'Documents are private in intent, but the download handler intentionally omits ownership authorization.'
-    : ($variant === 'v2'
-        ? 'Files use opaque identifiers, but V2 intentionally does not enforce ownership authorization.'
-        : 'Files use opaque identifiers and require ownership authorization.'),
+    : ($variant === 'patched'
+        ? 'The combined build uses 32-byte random tokens, private storage, and server-side owner authorization before attachment delivery.'
+        : ($variant === 'v2'
+            ? 'Files use opaque identifiers, but V2 intentionally does not enforce ownership authorization.'
+            : 'Files use opaque identifiers and require ownership authorization.')),
 ];
 page_header($headings[$scenario]);
 ?>
@@ -34,10 +40,10 @@ page_header($headings[$scenario]);
 <button type="submit">Upload lab file</button>
 </form>
 <h2>Your files in this version</h2>
-<table><thead><tr><th><?= $scenario === 'idor' && in_array($variant, ['v2', 'v3'], true) ? 'Opaque identifier' : 'ID' ?></th><th>Original filename</th><th>Action</th></tr></thead><tbody>
+<table><thead><tr><th><?= $scenario === 'idor' && in_array($variant, ['v2', 'v3', 'patched'], true) ? 'Opaque identifier' : 'ID' ?></th><th>Original filename</th><th>Action</th></tr></thead><tbody>
 <?php foreach (find_my_files((int)$user['id'], $scenario, $variant) as $file): ?>
-<tr><td><?= $scenario === 'idor' && in_array($variant, ['v2', 'v3'], true) ? e((string)$file['public_token']) : (int)$file['id'] ?></td><td><?= e((string)$file['original_name']) ?></td><td>
-<?php if ($scenario === 'xss' && in_array($variant, ['v1', 'v3'], true)): ?>
+<tr><td><?= $scenario === 'idor' && in_array($variant, ['v2', 'v3', 'patched'], true) ? e((string)$file['public_token']) : (int)$file['id'] ?></td><td><?= e((string)$file['original_name']) ?></td><td>
+<?php if ($scenario === 'xss' && in_array($variant, ['v1', 'v3', 'patched'], true)): ?>
 <a href="<?= e(scenario_url($scenario, $variant)) ?>preview.php?id=<?= (int)$file['id'] ?>">Preview</a> ·
 <?php endif; ?>
 <a href="<?= e(file_link($file)) ?>"><?= $scenario === 'idor' ? 'Download' : 'Open uploaded file' ?></a>
@@ -47,5 +53,5 @@ page_header($headings[$scenario]);
 <?php if ($scenario === 'idor'): ?>
 <p class="note">For the IDOR experiment, upload a private test file as Igor, record its identifier, then sign in as Arcie and request that identifier through this version's download route.</p>
 <?php endif; ?>
-<p><a href="<?= e(scenario_url($scenario)) ?>">Back to versions</a></p>
+<p><a href="<?= $variant === 'patched' ? '/scenarios/patched/' : e(scenario_url($scenario)) ?>">Back to versions</a></p>
 <?php page_footer(); ?>

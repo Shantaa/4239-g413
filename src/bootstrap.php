@@ -51,12 +51,24 @@ function find_my_files(int $owner, string $scenario, string $variant): array {
 }
 function scenario_url(string $scenario, string $variant = ''): string {
     if (!in_array($scenario, ['rce', 'xss', 'idor'], true)) throw new InvalidArgumentException('Unknown scenario');
-    if ($variant !== '' && !preg_match('/^v[1-9][0-9]*$/', $variant)) throw new InvalidArgumentException('Invalid version');
+    if ($variant !== '' && !preg_match('/^(?:v[1-9][0-9]*|patched)$/', $variant)) throw new InvalidArgumentException('Invalid version');
+    if ($variant === 'patched') return '/scenarios/patched/' . $scenario . '/';
     return '/scenarios/' . $scenario . '/' . ($variant !== '' ? $variant . '/' : '');
 }
 function file_link(array $file): string {
     $scenario = (string)$file['scenario'];
     $variant = (string)($file['variant'] ?? 'v1');
+    if ($variant === 'patched') {
+        if ($scenario === 'idor') {
+            return '/scenarios/patched/idor/download.php?token=' . rawurlencode((string)$file['public_token']);
+        }
+        if ($scenario === 'rce') {
+            return '/scenarios/patched/rce/download.php?id=' . (int)$file['id'];
+        }
+        if ($scenario === 'xss') {
+            return '/scenarios/patched/xss/preview.php?id=' . (int)$file['id'];
+        }
+    }
     if ($scenario === 'idor') {
         if (in_array($variant, ['v2', 'v3'], true)) {
             return scenario_url($scenario, $variant) . 'download.php?token=' . rawurlencode((string)$file['public_token']);

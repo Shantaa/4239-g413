@@ -10,7 +10,8 @@ XSS: V1 vulnerable; V2 safe file delivery; V3 CSP. Optional V4 for an additional
 
 IDOR: V1 vulnerable; V2 opaque identifiers without ownership checks; V3 ownership authorization. These are separate hypotheses, not necessarily a linear progression.
 
-The `/scenarios/patched/` page is a **placeholder only**. No security guarantees should be attributed to it.
+The `/scenarios/patched/` routes combine the hardened controls and must be
+verified with live RCE, XSS, and IDOR tests before security claims are made.
 
 ## Source structure
 
@@ -20,7 +21,8 @@ public/scenarios/<rce|xss|idor>/v1/index.php   functioning baseline
 public/scenarios/<rce|xss|idor>/v1/upload.php  baseline upload endpoint
 public/scenarios/<rce|xss|idor>/v2/index.php   first defensive comparison
 public/scenarios/<rce|xss|idor>/v3/index.php   second defensive comparison
-public/scenarios/patched/index.php            placeholder
+public/scenarios/patched/index.php            combined hardened application
+public/scenarios/patched/<rce|xss|idor>/       scenario-specific patched routes
 public/common/                               shared rendering and upload handler
 src/bootstrap.php                            database, auth, and route helpers
 scripts/migrate_versions.php                 preserves existing SQLite records
@@ -95,7 +97,7 @@ rm -f public/scenarios/xss/preview.php public/scenarios/idor/download.php
 - `/scenarios/rce/` — version selection → `/scenarios/rce/v1/`
 - `/scenarios/xss/` — version selection → `/scenarios/xss/v1/`
 - `/scenarios/idor/` — version selection → `/scenarios/idor/v1/`
-- `/scenarios/patched/` — placeholder
+- `/scenarios/patched/` — combined hardened RCE, XSS, and IDOR application
 - `/scenarios/rce/v2/` — upload validation comparison
 - `/scenarios/xss/v2/` — safe file delivery comparison
 - `/scenarios/idor/v2/` — opaque-token comparison without ownership checks

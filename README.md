@@ -4,7 +4,7 @@ Experimental study of **server-side code execution (RCE)**, **stored XSS**, and 
 
 **Current status:** All three **V1 vulnerable scenarios work**. RCE V2/V3,
 XSS V2/V3, and IDOR V2/V3 are implemented for the defence comparisons.
-`/scenarios/patched/` remains a placeholder.
+`/scenarios/patched/` now combines the RCE, XSS, and IDOR hardened controls.
 
 **Verified outcomes:** RCE V1 executes, RCE V2 rejects PHP uploads, and RCE
 V3 serves PHP as data. XSS V1 executes the SVG payload, XSS V2 downloads it,
@@ -21,7 +21,7 @@ test access, while IDOR V3 enforces ownership authorization.
 | **XSS** | Same-origin SVG/HTML preview | Safe file delivery | Content Security Policy |
 | **IDOR** | File ID without ownership check | Opaque identifiers only | Server-side ownership checks |
 
-Visit `/scenarios/rce/`, `/scenarios/xss/`, or `/scenarios/idor/` to select a version. `/scenarios/patched/` is the **final integrated-app placeholder**, not a completed fix. Version numbers label experimental configurations; they are not security rankings.
+Visit `/scenarios/rce/`, `/scenarios/xss/`, or `/scenarios/idor/` to select a version. `/scenarios/patched/` is the **combined final hardened application**. Version numbers label the separate experimental configurations; they are not security rankings.
 
 Demo users: `arcie`, `crosley`, `igor`. **All passwords:** `password123`. Every user can access every scenario; IDOR tests require two distinct accounts.
 
@@ -33,7 +33,7 @@ public/                   Apache document root: dashboard, login, scenario route
   scenarios/xss/v1/       Vulnerable upload and same-origin preview
   scenarios/idor/v1/      Vulnerable private-file download handler
   scenarios/*/v2,v3/     Defensive comparison routes
-  scenarios/patched/     Final integrated-app placeholder
+  scenarios/patched/     Combined hardened RCE, XSS, and IDOR routes
   common/                Shared upload page and handler
 src/bootstrap.php        Auth/session, SQLite and route helpers
 scripts/init_db.php      Fresh database and three demo users
@@ -102,10 +102,17 @@ summary.
 bash tests/rce_test.sh v1
 bash tests/rce_test.sh v2
 bash tests/rce_test.sh v3
+bash tests/rce_test.sh patched
 bash tests/idor_test.sh v1
 bash tests/idor_test.sh v2
 bash tests/idor_test.sh v3
+bash tests/idor_test.sh patched
 ```
+
+The `patched` target runs the final combined routes at
+`/scenarios/patched/rce/`, `/scenarios/patched/xss/`, and
+`/scenarios/patched/idor/`. RCE and IDOR have repeatable harnesses; XSS
+requires manual browser verification.
 
 **IDOR scripts are run locally, not uploaded.** IDOR V1 uses a numeric file
 ID; V2 and V3 use opaque tokens. A normal owner download is not evidence of

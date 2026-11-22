@@ -46,4 +46,13 @@ if (!is_dir(DATA_ROOT . '/private/xss/v3') && !mkdir(DATA_ROOT . '/private/xss/v
 if (!is_dir(DATA_ROOT . '/private/v3') && !mkdir(DATA_ROOT . '/private/v3', 0750, true)) {
     throw new RuntimeException('Could not create data/private/v3');
 }
+if (!is_dir(DATA_ROOT . '/private/patched') && !mkdir(DATA_ROOT . '/private/patched', 0750, true)) {
+    throw new RuntimeException('Could not create data/private/patched');
+}
+if (!is_dir(DATA_ROOT . '/private/rce/patched') && !mkdir(DATA_ROOT . '/private/rce/patched', 0750, true)) {
+    throw new RuntimeException('Could not create data/private/rce/patched');
+}
+if (!is_dir(DATA_ROOT . '/private/xss/patched') && !mkdir(DATA_ROOT . '/private/xss/patched', 0750, true)) {
+    throw new RuntimeException('Could not create data/private/xss/patched');
+}
 echo 'Existing uploads and users preserved. Migration complete.' . PHP_EOL;

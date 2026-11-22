@@ -6,7 +6,7 @@
 # The payload is never changed to fit a defence; only the target version changes.
 #
 # Usage:   tests/rce_test.sh [version] [base_url]
-#   version   v1 (default) | v2 | v3   -- application version to test
+#   version   v1 (default) | v2 | v3 | patched -- application version to test
 #   base_url  default http://127.0.0.1:8080  (localhost only)
 #
 # Exit 0 = RCE occurred (vulnerable), 1 = no execution (blocked/placeholder),
@@ -15,7 +15,11 @@ set -u
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 VER="${1:-v1}"
 BASE="${2:-http://127.0.0.1:8080}"
-PAYLOAD="$REPO/exploits/rce/$VER.php"
+if [ "$VER" = "patched" ]; then
+  PAYLOAD="$REPO/exploits/rce/patched.php"
+else
+  PAYLOAD="$REPO/exploits/rce/$VER.php"
+fi
 
 case "$BASE" in http://127.0.0.1*|http://localhost*) ;; *) echo "localhost only"; exit 2;; esac
 [ -f "$PAYLOAD" ] || { echo "Payload not found: $PAYLOAD"; exit 2; }
@@ -28,17 +32,24 @@ curl -s -L -c "$CJ" -b "$CJ" -d "username=arcie&password=password123" \
      "$BASE/login.php" | grep -q "Signed in as <strong>arcie" \
   || { echo "FAIL: Arcie login failed"; exit 2; }
 
-echo "-- Uploading $PAYLOAD to /scenarios/rce/$VER/upload.php"
+if [ "$VER" = "patched" ]; then
+  UPLOAD_URL="$BASE/scenarios/patched/rce/upload.php"
+  LIST_URL="$BASE/scenarios/patched/rce/"
+else
+  UPLOAD_URL="$BASE/scenarios/rce/$VER/upload.php"
+  LIST_URL="$BASE/scenarios/rce/$VER/"
+fi
+echo "-- Uploading $PAYLOAD to $UPLOAD_URL"
 code=$(curl -s -o /dev/null -w '%{http_code}' -b "$CJ" \
        -F "userfile=@$PAYLOAD;type=application/x-php" \
-       "$BASE/scenarios/rce/$VER/upload.php")
+       "$UPLOAD_URL")
 if [ "$code" != "200" ] && [ "$code" != "302" ]; then
   echo "Upload returned HTTP $code (version likely not implemented / rejected)."
   echo "RESULT: no RCE (upload not accepted for $VER)."; exit 1
 fi
 
 echo "-- Reading file list, finding newest stored upload"
-LINK=$(curl -s -b "$CJ" "$BASE/scenarios/rce/$VER/" \
+LINK=$(curl -s -b "$CJ" "$LIST_URL" \
        | grep -oE 'href="[^"]*(uploads/[^"]+|download\.php\?id=[0-9]+)"' \
        | head -1 | sed -E 's/^href="|"$//g')
 [ -n "$LINK" ] || { echo "FAIL: could not find uploaded file link"; exit 2; }

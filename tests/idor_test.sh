@@ -8,8 +8,8 @@
 #      requests Igor's file through the download route with no ownership.
 # Receiving Igor's private marker demonstrates unauthorized disclosure (IDOR).
 #
-# Usage:   tests/idor_test.sh [version] [base_url] 
-#   version   v1 (default) | v2 | v3   -- application version to test
+# Usage:   tests/idor_test.sh [version] [base_url]
+#   version   v1 (default) | v2 | v3 | patched -- application version to test
 #   base_url  default http://127.0.0.1:8080  (localhost only)
 #
 # Exit 0 = IDOR occurred (Arcie read Igor's file), 1 = blocked/placeholder,
@@ -33,17 +33,27 @@ curl -s -L -c "$CJ" -b "$CJ" -d "username=igor&password=password123" \
      "$BASE/login.php" | grep -q "Signed in as <strong>igor" \
   || { echo "FAIL: Igor login failed"; exit 2; }
 
-echo "-- Igor uploads his private file to /scenarios/idor/$VER/upload.php"
+if [ "$VER" = "patched" ]; then
+  UPLOAD_URL="$BASE/scenarios/patched/idor/upload.php"
+  LIST_URL="$BASE/scenarios/patched/idor/"
+else
+  UPLOAD_URL="$BASE/scenarios/idor/$VER/upload.php"
+  LIST_URL="$BASE/scenarios/idor/$VER/"
+fi
+echo "-- Igor uploads his private file to $UPLOAD_URL"
 code=$(curl -s -o /dev/null -w '%{http_code}' -b "$CJ" \
        -F "userfile=@$PRIVATE;type=text/plain" \
-       "$BASE/scenarios/idor/$VER/upload.php")
+       "$UPLOAD_URL")
 if [ "$code" != "200" ] && [ "$code" != "302" ]; then
   echo "Upload returned HTTP $code (version likely not implemented)."; exit 1
 fi
 
 echo "-- Reading back the identifier assigned to Igor's newest upload"
-if [ "$VER" = "v2" ] || [ "$VER" = "v3" ]; then
-  FID=$(curl -s -b "$CJ" "$BASE/scenarios/idor/$VER/" \
+if [ "$VER" = "patched" ]; then
+  FID=$(curl -s -b "$CJ" "$LIST_URL" \
+        | grep -oE '<td>[a-f0-9]{64}</td>' | head -1 | sed -E 's#</?td>##g')
+elif [ "$VER" = "v2" ] || [ "$VER" = "v3" ]; then
+  FID=$(curl -s -b "$CJ" "$LIST_URL" \
         | grep -oE '<td>[a-f0-9]{32}</td>' | head -1 | sed -E 's#</?td>##g')
 else
   FID=$(curl -s -b "$CJ" "$BASE/scenarios/idor/$VER/" \

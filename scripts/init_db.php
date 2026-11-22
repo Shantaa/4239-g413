@@ -9,6 +9,9 @@ if (!is_dir(DATA_ROOT . '/private/xss/v2')) mkdir(DATA_ROOT . '/private/xss/v2',
 if (!is_dir(DATA_ROOT . '/private/rce/v3')) mkdir(DATA_ROOT . '/private/rce/v3', 0750, true);
 if (!is_dir(DATA_ROOT . '/private/xss/v3')) mkdir(DATA_ROOT . '/private/xss/v3', 0750, true);
 if (!is_dir(DATA_ROOT . '/private/v3')) mkdir(DATA_ROOT . '/private/v3', 0750, true);
+if (!is_dir(DATA_ROOT . '/private/patched')) mkdir(DATA_ROOT . '/private/patched', 0750, true);
+if (!is_dir(DATA_ROOT . '/private/rce/patched')) mkdir(DATA_ROOT . '/private/rce/patched', 0750, true);
+if (!is_dir(DATA_ROOT . '/private/xss/patched')) mkdir(DATA_ROOT . '/private/xss/patched', 0750, true);
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL)');
 $pdo->exec("CREATE TABLE IF NOT EXISTS files (
